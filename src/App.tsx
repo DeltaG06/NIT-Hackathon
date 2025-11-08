@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Events from './pages/Events'
+import ProComm from './pages/ProComm'
 import Profile from './pages/Profile'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -64,6 +65,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Events />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/procomm"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProComm />
             </AppLayout>
           </ProtectedRoute>
         }

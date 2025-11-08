@@ -35,6 +35,7 @@ export default function Sidebar() {
     { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { path: '/projects', label: 'Projects', icon: '💡' },
     { path: '/events', label: 'Events', icon: '📅' },
+    { path: '/procomm', label: 'ProComm', icon: '💬' },
     { path: '/profile', label: 'Profile', icon: '👤' },
   ]
 
