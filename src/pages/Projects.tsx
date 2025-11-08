@@ -47,15 +47,27 @@ export default function Projects() {
     if (!user) return
 
     try {
-      // Insert project
+      // Get user profile for owner_name
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+
+      // Insert project with all required fields
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
           title: formData.title,
           description: formData.description,
-          tags: formData.tags.split(',').map((t) => t.trim()),
-          required_skills: formData.required_skills.split(',').map((s) => s.trim()),
+          tags: formData.tags.split(',').map((t) => t.trim()).filter(t => t),
+          domain_tags: formData.tags.split(',').map((t) => t.trim()).filter(t => t),
+          required_skills: formData.required_skills.split(',').map((s) => s.trim()).filter(s => s),
           looking_for: formData.looking_for,
+          created_by: user.id,
+          owner_id: user.id,
+          owner_name: userProfile?.name || 'Unknown',
+          status: 'idea',
         })
         .select()
         .single()
@@ -67,6 +79,7 @@ export default function Projects() {
         project_id: project.id,
         user_id: user.id,
         role: 'owner',
+        is_owner: true,
       })
 
       // Add repo link if provided
@@ -87,7 +100,9 @@ export default function Projects() {
         repo_link: '',
       })
       fetchProjects()
+      alert('Project created successfully!')
     } catch (error: any) {
+      console.error('Error creating project:', error)
       alert('Error creating project: ' + error.message)
     }
   }
