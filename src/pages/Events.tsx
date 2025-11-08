@@ -56,9 +56,11 @@ export default function Events() {
         description: formData.description,
         event_type: formData.event_type,
         date: formData.date,
-        domains: formData.domains.split(',').map((d) => d.trim()),
+        event_date: formData.date,
+        domains: formData.domains.split(',').map((d) => d.trim()).filter(d => d),
         location: formData.location,
         organizer: formData.organizer,
+        organizer_id: user.id,
         registration_link: formData.registration_link,
         created_by: user.id,
       })
@@ -77,7 +79,9 @@ export default function Events() {
         registration_link: '',
       })
       fetchEvents()
+      alert('Event created successfully!')
     } catch (error: any) {
+      console.error('Error creating event:', error)
       alert('Error creating event: ' + error.message)
     }
   }
