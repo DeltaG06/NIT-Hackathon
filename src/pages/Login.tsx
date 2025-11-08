@@ -23,25 +23,64 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, name, college, year, department)
-        if (error) {
-          // Handle rate limit errors with helpful message
-          if (error.message?.toLowerCase().includes('rate limit') || 
-              error.message?.toLowerCase().includes('email rate limit')) {
-            setError('Too many signup attempts. Please wait a few minutes and try again, or try signing in if you already have an account.')
-          } else {
-            setError(error.message)
-          }
-        } else {
-          navigate('/dashboard')
+        // Basic client validation
+        if (!name.trim() || !college.trim()) {
+          setError('Name and College are required')
+          setLoading(false)
+          return
         }
+        if (!email.trim() || !email.includes('@')) {
+          setError('Please enter a valid email address')
+          setLoading(false)
+          return
+        }
+        if (!password || password.length < 6) {
+          setError('Password must be at least 6 characters')
+          setLoading(false)
+          return
+        }
+
+        const { error } = await signUp(email.trim(), password, name.trim(), college.trim(), year?.trim(), department?.trim())
+        if (error) {
+          const msg = (error.message || '').toLowerCase()
+          if (msg.includes('too many') || msg.includes('rate limit')) {
+            setError('Too many signup attempts. Please wait a few minutes and try again.')
+          } else if (msg.includes('confirm') || msg.includes('email')) {
+            setError('Email confirmation may be required. Please check your email or disable it in Supabase Auth settings.')
+          } else if (msg.includes('already') || msg.includes('registered')) {
+            setError('Email already registered. Please sign in instead.')
+          } else {
+            setError(error.message || 'Unable to sign up. Please try again.')
+          }
+          setLoading(false)
+          return
+        }
+
+        // Navigate after successful signup
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 500)
       } else {
-        const { error } = await signIn(email, password)
+        if (!email.trim() || !email.includes('@')) {
+          setError('Please enter a valid email address')
+          setLoading(false)
+          return
+        }
+        if (!password) {
+          setError('Please enter your password')
+          setLoading(false)
+          return
+        }
+
+        const { error } = await signIn(email.trim(), password)
         if (error) {
           setError(error.message)
-        } else {
-          navigate('/dashboard')
+          setLoading(false)
+          return
         }
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 500)
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred')
@@ -144,26 +183,29 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="Enter your email"
+              autoComplete="email"
               className="w-full px-4 py-2 border border-silver rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-black mb-1">
-              Passkey
+              Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={3}
-              placeholder="Enter a simple passkey (min 3 characters)"
+              minLength={6}
+              placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               className="w-full px-4 py-2 border border-silver rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
             />
             {isSignUp && (
               <p className="text-xs text-silver-dark mt-1">
-                Minimum 3 characters required
+                Password must be at least 6 characters
               </p>
             )}
           </div>

@@ -27,6 +27,8 @@ export default function Sidebar() {
 
   const handleSignOut = async () => {
     await signOut()
+    // Hard redirect to login to clear protected route state
+    window.location.href = '/login'
   }
 
   const navItems = [

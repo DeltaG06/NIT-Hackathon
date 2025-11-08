@@ -46,47 +46,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     year?: string,
     department?: string
   ) => {
-    // Simple password validation - just check minimum length
-    if (!password || password.length < 3) {
-      return { error: { message: 'Passkey must be at least 3 characters' } }
+    // Validate email
+    const trimmedEmail = email?.trim().toLowerCase()
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      return { error: { message: 'Please enter a valid email address' } }
     }
 
-    // Create auth user - disable email confirmation to avoid rate limits
+    // Validate password
+    if (!password || password.length < 6) {
+      return { error: { message: 'Password must be at least 6 characters' } }
+    }
+
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', trimmedEmail)
+      .maybeSingle()
+
+    if (existingUser) {
+      return { error: { message: 'Email already registered. Please sign in instead.' } }
+    }
+
+    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
+      email: trimmedEmail,
+      password: password,
       options: {
         emailRedirectTo: undefined,
-        data: {
-          name,
-          college,
-        },
+        data: { name, college },
       },
     })
 
     if (authError) {
-      // Provide more helpful error messages
-      let errorMessage = authError.message
-      if (authError.message?.toLowerCase().includes('rate limit') || 
-          authError.message?.toLowerCase().includes('email rate limit')) {
-        errorMessage = 'Email rate limit exceeded. Please wait a few minutes before trying again.'
+      const msg = authError.message?.toLowerCase() || ''
+      if (msg.includes('rate limit')) {
+        return { error: { ...authError, message: 'Too many attempts. Wait a few minutes and try again.' } }
       }
-      return { error: { ...authError, message: errorMessage } }
+      if (msg.includes('already registered') || msg.includes('already exists')) {
+        return { error: { ...authError, message: 'Email already registered. Please sign in instead.' } }
+      }
+      return { error: authError }
     }
 
+    // Insert user profile
     if (authData.user) {
-      // Immediately insert into users table
-      const { error: userError } = await supabase.from('users').insert({
-        id: authData.user.id,
-        email,
-        name,
-        college,
-        year,
-        department,
-      })
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: trimmedEmail,
+          name,
+          college,
+          year,
+          department,
+        })
 
-      if (userError) {
-        return { error: userError }
+      if (userError) return { error: userError }
+
+      // Ensure we have a session; if not, sign in explicitly
+      if (!authData.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password: password,
+        })
+        if (signInError) return { error: signInError }
       }
     }
 
@@ -94,11 +118,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const trimmedEmail = email?.trim().toLowerCase()
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      return { error: { message: 'Please enter a valid email address' } }
+    }
+
+    if (!password || password.length < 1) {
+      return { error: { message: 'Please enter your password' } }
+    }
+
+    // Sign in with email and password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password: password,
     })
-    return { error }
+
+    if (signInError) {
+      const msg = signInError.message?.toLowerCase() || ''
+      if (msg.includes('invalid login') || msg.includes('invalid') || msg.includes('user not found')) {
+        return { error: { message: 'Invalid email or password. Please check your credentials.' } }
+      }
+      if (msg.includes('confirm') || msg.includes('email')) {
+        return { error: { message: 'Email confirmation required. Please check your email and verify your account.' } }
+      }
+      return { error: { message: signInError.message || 'Unable to sign in. Please try again.' } }
+    }
+
+    return { error: null }
   }
 
   const signOut = async () => {
