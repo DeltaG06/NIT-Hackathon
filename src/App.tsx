@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Discover from './pages/Discover'
 import Projects from './pages/Projects'
 import ProjectDetailPage from './pages/ProjectDetailPage'
 import Events from './pages/Events'
@@ -46,6 +47,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discover"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Discover />
             </AppLayout>
           </ProtectedRoute>
         }

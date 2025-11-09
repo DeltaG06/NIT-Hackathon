@@ -33,6 +33,7 @@ export default function Sidebar() {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
+    { path: '/discover', label: 'Discover', icon: '🔍' },
     { path: '/projects', label: 'Projects', icon: '💡' },
     { path: '/events', label: 'Events', icon: '📅' },
     { path: '/procomm', label: 'ProComm', icon: '💬' },
