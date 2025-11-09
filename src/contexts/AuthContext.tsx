@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { supabase, getRedirectUrl } from '../lib/supabase'
 
 interface AuthContextType {
   user: User | null
@@ -69,11 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Create auth user
+    const redirectUrl = getRedirectUrl()
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: trimmedEmail,
       password: password,
       options: {
-        emailRedirectTo: undefined,
+        emailRedirectTo: redirectUrl,
         data: { name, college },
       },
     })

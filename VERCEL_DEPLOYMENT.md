@@ -21,6 +21,16 @@ This guide will walk you through deploying Campus Connect to Vercel.
    - **Project URL** (this is your `VITE_SUPABASE_URL`)
    - **anon/public key** (this is your `VITE_SUPABASE_ANON_KEY`)
 
+4. **Configure Authentication Redirect URLs** (Important!):
+   - Go to **Authentication** → **URL Configuration**
+   - Set **Site URL** to your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
+   - Add to **Redirect URLs**:
+     - `https://your-app.vercel.app/auth/callback`
+     - `http://localhost:5173/auth/callback` (for local development)
+   - Click **Save**
+   
+   **Note**: This ensures email confirmation links point to your production URL, not localhost. See [SUPABASE_AUTH_SETUP.md](./SUPABASE_AUTH_SETUP.md) for detailed instructions.
+
 ## Step 3: Deploy to Vercel
 
 ### Option A: Deploy via Vercel Dashboard (Recommended)
@@ -43,6 +53,10 @@ This guide will walk you through deploying Campus Connect to Vercel.
      - **Value**: Your Supabase project URL
      - **Name**: `VITE_SUPABASE_ANON_KEY`
      - **Value**: Your Supabase anon key
+     - **Name**: `VITE_SITE_URL` (Optional)
+     - **Value**: Your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
+   
+   **Note**: `VITE_SITE_URL` is optional as the app auto-detects the URL in production, but setting it explicitly can help with email confirmations.
 6. Click **Deploy**
 
 ### Option B: Deploy via Vercel CLI
@@ -112,6 +126,10 @@ After deployment, you can add or update environment variables:
 1. **404 on Routes**: The `vercel.json` file includes rewrites to handle client-side routing
 2. **Environment Variables Not Working**: Make sure variables are prefixed with `VITE_` for Vite to expose them
 3. **Build Timeout**: Large builds might timeout; consider optimizing your bundle size
+4. **Email Confirmation Links Point to Localhost**: 
+   - Make sure you've configured redirect URLs in Supabase (see Step 2)
+   - Verify the Site URL in Supabase matches your Vercel deployment URL
+   - See [SUPABASE_AUTH_SETUP.md](./SUPABASE_AUTH_SETUP.md) for detailed troubleshooting
 
 ## Custom Domain
 
