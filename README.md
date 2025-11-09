@@ -80,6 +80,21 @@ npm run build
 
 This creates a `dist` folder with production-ready files.
 
+## Deployment to Vercel
+
+This project is configured for easy deployment on Vercel. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instructions.
+
+### Quick Deploy
+
+1. Push your code to GitHub/GitLab/Bitbucket
+2. Import your repository on [Vercel](https://vercel.com)
+3. Add environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy!
+
+The `vercel.json` file is already configured with the correct settings for Vite.
+
 ## Project Structure
 
 ```
