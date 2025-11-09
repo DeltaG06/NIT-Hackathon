@@ -5,11 +5,10 @@ import { supabase } from '../lib/supabase'
 interface ProjectDetailProps {
   project: any
   onClose: () => void
-  onUpdate: () => void
+  onUpdate?: () => void
 }
 
-export default function ProjectDetail({ project, onClose, onUpdate }: ProjectDetailProps) {
-  const { user } = useAuth()
+export default function ProjectDetail({ project, onClose }: ProjectDetailProps) {
   const [projectData, setProjectData] = useState<any>(project)
   const [repoLink, setRepoLink] = useState<string>('')
   const [members, setMembers] = useState<any[]>([])

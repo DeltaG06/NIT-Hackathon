@@ -84,7 +84,7 @@ export default function Events() {
       setUploading(true)
 
       // Upload image if provided
-      let imageUrl = formData.image_url
+      let imageUrl: string | null = formData.image_url || null
       if (imageFile) {
         const uploadedUrl = await handleImageUpload(imageFile)
         if (uploadedUrl) {

@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase'
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [project, setProject] = useState<any>(null)
   const [repoLink, setRepoLink] = useState<string>('')
   const [members, setMembers] = useState<any[]>([])

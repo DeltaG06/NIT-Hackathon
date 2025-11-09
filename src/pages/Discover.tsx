@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase'
 export default function Discover() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [userProfile, setUserProfile] = useState<any>(null)
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([])
   const [suggestedEvents, setSuggestedEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,7 +28,6 @@ export default function Discover() {
         .single()
 
       if (profile) {
-        setUserProfile(profile)
         await fetchSuggestedUsers(profile)
         await fetchSuggestedEvents(profile)
       }

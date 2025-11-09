@@ -4,10 +4,10 @@ import { supabase } from '../lib/supabase'
 
 interface EventCardProps {
   event: any
-  onUpdate: () => void
+  onUpdate?: () => void
 }
 
-export default function EventCard({ event, onUpdate }: EventCardProps) {
+export default function EventCard({ event }: EventCardProps) {
   const { user } = useAuth()
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState<any[]>([])

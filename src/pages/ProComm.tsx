@@ -243,19 +243,13 @@ export default function ProComm() {
       const user1Id = user.id < senderId ? user.id : senderId
       const user2Id = user.id < senderId ? senderId : user.id
 
-      const { data: friendshipData, error: friendshipError } = await supabase
+      const { error: friendshipError } = await supabase
         .from('friendships')
         .insert({
           user1_id: user1Id,
           user2_id: user2Id,
           status: 'accepted',
         })
-        .select(`
-          *,
-          user1:users!friendships_user1_id_fkey(id, name, email, college, avatar_url),
-          user2:users!friendships_user2_id_fkey(id, name, email, college, avatar_url)
-        `)
-        .single()
 
       if (friendshipError) {
         console.error('Error creating friendship:', friendshipError)
