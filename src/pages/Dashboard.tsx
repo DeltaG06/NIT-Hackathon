@@ -49,7 +49,13 @@ export default function Dashboard() {
         ...prev,
         activeProjects: projects.length,
       }))
-      setRecentProjects(projects.slice(0, 3).map((p: any) => p.projects))
+      // Get the most recent 3 projects, sorted by created_at
+      const projectData = projects
+        .map((p: any) => p.projects)
+        .filter((p: any) => p !== null)
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3)
+      setRecentProjects(projectData)
     }
 
     // Fetch upcoming events
@@ -140,17 +146,48 @@ export default function Dashboard() {
             </button>
           </div>
           {recentProjects.length > 0 ? (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {recentProjects.map((project: any) => (
                 <div
                   key={project.id}
-                  className="border border-silver rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="border border-silver rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer bg-white"
                   onClick={() => navigate(`/projects/${project.id}`)}
                 >
-                  <h3 className="font-semibold text-black mb-1">{project.title}</h3>
-                  <p className="text-sm text-silver-dark line-clamp-2">
-                    {project.description}
-                  </p>
+                  {/* Project Image */}
+                  {project.image_url && (
+                    <div className="w-full h-32 bg-silver-light overflow-hidden">
+                      <img
+                        src={project.image_url}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-black mb-2 text-lg">{project.title}</h3>
+                    <p className="text-sm text-silver-dark line-clamp-2 mb-3">
+                      {project.description}
+                    </p>
+                    {project.tags && project.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {project.tags.slice(0, 2).map((tag: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-silver-light text-black text-xs rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-silver-dark mt-2">
+                      <span>👥</span>
+                      <span>View Details →</span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

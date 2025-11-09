@@ -15,180 +15,60 @@ export default function ProComm() {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Dummy data for testing
-  const dummyFriends = [
-    {
-      id: 'friend1',
-      name: 'Alex Johnson',
-      email: 'alex@example.com',
-      college: 'MIT',
-      avatar_url: null,
-      friendship_id: 'f1',
-    },
-    {
-      id: 'friend2',
-      name: 'Sarah Chen',
-      email: 'sarah@example.com',
-      college: 'Stanford',
-      avatar_url: null,
-      friendship_id: 'f2',
-    },
-    {
-      id: 'friend3',
-      name: 'Michael Brown',
-      email: 'michael@example.com',
-      college: 'Harvard',
-      avatar_url: null,
-      friendship_id: 'f3',
-    },
-    {
-      id: 'friend4',
-      name: 'Emily Davis',
-      email: 'emily@example.com',
-      college: 'UC Berkeley',
-      avatar_url: null,
-      friendship_id: 'f4',
-    },
-  ]
-
-  const dummyFriendRequests = [
-    {
-      id: 'req1',
-      sender_id: 'sender1',
-      receiver_id: user?.id || 'current',
-      status: 'pending',
-      sender: {
-        id: 'sender1',
-        name: 'David Wilson',
-        email: 'david@example.com',
-        college: 'Yale',
-        avatar_url: null,
-      },
-    },
-    {
-      id: 'req2',
-      sender_id: 'sender2',
-      receiver_id: user?.id || 'current',
-      status: 'pending',
-      sender: {
-        id: 'sender2',
-        name: 'Jessica Martinez',
-        email: 'jessica@example.com',
-        college: 'Princeton',
-        avatar_url: null,
-      },
-    },
-  ]
-
-  // Use state for dummy messages so we can update them
-  const [dummyMessagesState, setDummyMessagesState] = useState<{ [key: string]: any[] }>({
-    friend1: [
-      {
-        id: 'msg1',
-        chat_id: 'chat1',
-        sender_id: 'friend1',
-        receiver_id: user?.id || 'current',
-        content: 'Hey! How are you doing?',
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        sender: { id: 'friend1', name: 'Alex Johnson', avatar_url: null },
-      },
-      {
-        id: 'msg2',
-        chat_id: 'chat1',
-        sender_id: user?.id || 'current',
-        receiver_id: 'friend1',
-        content: "I'm doing great! Thanks for asking. How about you?",
-        created_at: new Date(Date.now() - 3300000).toISOString(),
-        sender: { id: user?.id || 'current', name: 'You', avatar_url: null },
-      },
-      {
-        id: 'msg3',
-        chat_id: 'chat1',
-        sender_id: 'friend1',
-        receiver_id: user?.id || 'current',
-        content: "I'm good too! Working on a new project. Want to collaborate?",
-        created_at: new Date(Date.now() - 3000000).toISOString(),
-        sender: { id: 'friend1', name: 'Alex Johnson', avatar_url: null },
-      },
-    ],
-    friend2: [
-      {
-        id: 'msg4',
-        chat_id: 'chat2',
-        sender_id: 'friend2',
-        receiver_id: user?.id || 'current',
-        content: 'Hi! Are you going to the hackathon this weekend?',
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        sender: { id: 'friend2', name: 'Sarah Chen', avatar_url: null },
-      },
-      {
-        id: 'msg5',
-        chat_id: 'chat2',
-        sender_id: user?.id || 'current',
-        receiver_id: 'friend2',
-        content: 'Yes! I am. Are you participating too?',
-        created_at: new Date(Date.now() - 6900000).toISOString(),
-        sender: { id: user?.id || 'current', name: 'You', avatar_url: null },
-      },
-      {
-        id: 'msg6',
-        chat_id: 'chat2',
-        sender_id: 'friend2',
-        receiver_id: user?.id || 'current',
-        content: 'Yes! Maybe we can form a team?',
-        created_at: new Date(Date.now() - 6600000).toISOString(),
-        sender: { id: 'friend2', name: 'Sarah Chen', avatar_url: null },
-      },
-    ],
-    friend3: [
-      {
-        id: 'msg7',
-        chat_id: 'chat3',
-        sender_id: user?.id || 'current',
-        receiver_id: 'friend3',
-        content: 'Hey Michael! How did the exam go?',
-        created_at: new Date(Date.now() - 1800000).toISOString(),
-        sender: { id: user?.id || 'current', name: 'You', avatar_url: null },
-      },
-      {
-        id: 'msg8',
-        chat_id: 'chat3',
-        sender_id: 'friend3',
-        receiver_id: user?.id || 'current',
-        content: 'It went well! Thanks for asking. How about yours?',
-        created_at: new Date(Date.now() - 1500000).toISOString(),
-        sender: { id: 'friend3', name: 'Michael Brown', avatar_url: null },
-      },
-    ],
-    friend4: [
-      {
-        id: 'msg9',
-        chat_id: 'chat4',
-        sender_id: 'friend4',
-        receiver_id: user?.id || 'current',
-        content: 'Hello! 👋',
-        created_at: new Date(Date.now() - 900000).toISOString(),
-        sender: { id: 'friend4', name: 'Emily Davis', avatar_url: null },
-      },
-    ],
-  })
-
   useEffect(() => {
     if (user) {
-      // Use dummy data instead of fetching
-      setFriends(dummyFriends)
-      setFriendRequests(dummyFriendRequests)
-      setSentRequests([])
+      fetchFriends()
+      fetchFriendRequests()
+      fetchSentRequests()
     }
   }, [user])
 
   useEffect(() => {
     if (selectedFriend && user) {
-      // Load dummy messages for the selected friend
-      const friendMessages = dummyMessagesState[selectedFriend.id] || []
-      setMessages(friendMessages)
+      fetchMessages(selectedFriend.id)
+      
+      // Set up real-time subscription for messages
+      const chatId = getChatId(user.id, selectedFriend.id)
+      const channel = supabase
+        .channel(`chat:${chatId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${chatId}`,
+          },
+          (payload) => {
+            // Fetch sender info for new message
+            supabase
+              .from('users')
+              .select('id, name, avatar_url')
+              .eq('id', payload.new.sender_id)
+              .single()
+              .then(({ data: senderData }) => {
+                const newMessage = {
+                  ...payload.new,
+                  sender: senderData || { id: payload.new.sender_id, name: 'Unknown', avatar_url: null },
+                }
+                setMessages((prev) => [...prev, newMessage])
+                // Auto-scroll to bottom when new message arrives
+                setTimeout(() => {
+                  const messagesContainer = document.getElementById('messages-container')
+                  if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight
+                  }
+                }, 100)
+              })
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
-  }, [selectedFriend, user, dummyMessagesState])
+  }, [selectedFriend, user])
 
   useEffect(() => {
     // Auto-scroll to bottom when messages change
@@ -205,182 +85,278 @@ export default function ProComm() {
   const fetchFriends = async () => {
     if (!user) return
 
-    const { data } = await supabase
-      .from('friendships')
-      .select(`
-        *,
-        user1:users!friendships_user1_id_fkey(id, name, email, college, avatar_url),
-        user2:users!friendships_user2_id_fkey(id, name, email, college, avatar_url)
-      `)
-      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-      .eq('status', 'accepted')
+    try {
+      const { data, error } = await supabase
+        .from('friendships')
+        .select(`
+          *,
+          user1:users!friendships_user1_id_fkey(id, name, email, college, avatar_url),
+          user2:users!friendships_user2_id_fkey(id, name, email, college, avatar_url)
+        `)
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+        .eq('status', 'accepted')
 
-    if (data) {
-      const friendsList = data.map((friendship: any) => {
-        const friend = friendship.user1_id === user.id ? friendship.user2 : friendship.user1
-        return { ...friend, friendship_id: friendship.id }
-      })
-      setFriends(friendsList)
+      if (error) {
+        console.error('Error fetching friends:', error)
+        return
+      }
+
+      if (data) {
+        const friendsList = data.map((friendship: any) => {
+          const friend = friendship.user1_id === user.id ? friendship.user2 : friendship.user1
+          return { ...friend, friendship_id: friendship.id }
+        })
+        setFriends(friendsList)
+      }
+    } catch (err) {
+      console.error('Error in fetchFriends:', err)
     }
   }
 
   const fetchFriendRequests = async () => {
     if (!user) return
 
-    const { data } = await supabase
-      .from('friend_requests')
-      .select(`
-        *,
-        sender:users!friend_requests_sender_id_fkey(id, name, email, college, avatar_url)
-      `)
-      .eq('receiver_id', user.id)
-      .eq('status', 'pending')
+    try {
+      const { data, error } = await supabase
+        .from('friend_requests')
+        .select(`
+          *,
+          sender:users!friend_requests_sender_id_fkey(id, name, email, college, avatar_url)
+        `)
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending')
 
-    if (data) {
-      setFriendRequests(data)
+      if (error) {
+        console.error('Error fetching friend requests:', error)
+        return
+      }
+
+      if (data) {
+        setFriendRequests(data)
+      }
+    } catch (err) {
+      console.error('Error in fetchFriendRequests:', err)
     }
   }
 
   const fetchSentRequests = async () => {
     if (!user) return
 
-    const { data } = await supabase
-      .from('friend_requests')
-      .select(`
-        *,
-        receiver:users!friend_requests_receiver_id_fkey(id, name, email, college, avatar_url)
-      `)
-      .eq('sender_id', user.id)
-      .eq('status', 'pending')
+    try {
+      const { data, error } = await supabase
+        .from('friend_requests')
+        .select(`
+          *,
+          receiver:users!friend_requests_receiver_id_fkey(id, name, email, college, avatar_url)
+        `)
+        .eq('sender_id', user.id)
+        .eq('status', 'pending')
 
-    if (data) {
-      setSentRequests(data)
+      if (error) {
+        console.error('Error fetching sent requests:', error)
+        return
+      }
+
+      if (data) {
+        setSentRequests(data)
+      }
+    } catch (err) {
+      console.error('Error in fetchSentRequests:', err)
     }
   }
-
-  const dummySearchResults = [
-    {
-      id: 'search1',
-      name: 'Ryan Taylor',
-      email: 'ryan@example.com',
-      college: 'Cornell',
-      avatar_url: null,
-    },
-    {
-      id: 'search2',
-      name: 'Olivia White',
-      email: 'olivia@example.com',
-      college: 'UCLA',
-      avatar_url: null,
-    },
-    {
-      id: 'search3',
-      name: 'James Anderson',
-      email: 'james@example.com',
-      college: 'NYU',
-      avatar_url: null,
-    },
-  ]
 
   const searchUsers = async () => {
     if (!searchQuery.trim() || !user) return
 
     setLoading(true)
-    // Simulate search delay
-    setTimeout(() => {
-      // Filter dummy results based on search query
-      const filtered = dummySearchResults.filter((user) =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      setSearchResults(filtered)
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, email, college, avatar_url')
+        .ilike('name', `%${searchQuery}%`)
+        .neq('id', user.id)
+        .limit(10)
+
+      if (error) {
+        console.error('Error searching users:', error)
+        setSearchResults([])
+      } else if (data) {
+        setSearchResults(data)
+      }
+    } catch (err) {
+      console.error('Error in searchUsers:', err)
+      setSearchResults([])
+    } finally {
       setLoading(false)
-    }, 300)
+    }
   }
 
   const sendFriendRequest = async (receiverId: string) => {
     if (!user) return
 
-    // Simulate sending friend request
-    const newRequest = {
-      id: `req_${Date.now()}`,
-      sender_id: user.id,
-      receiver_id: receiverId,
-      status: 'pending',
-      receiver: dummySearchResults.find((u) => u.id === receiverId),
-    }
+    try {
+      const { data, error } = await supabase
+        .from('friend_requests')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          status: 'pending',
+        })
+        .select(`
+          *,
+          receiver:users!friend_requests_receiver_id_fkey(id, name, email, college, avatar_url)
+        `)
+        .single()
 
-    setSentRequests([...sentRequests, newRequest])
-    setSearchResults((prev) => prev.filter((u) => u.id !== receiverId))
+      if (error) {
+        console.error('Error sending friend request:', error)
+        alert('Error sending friend request: ' + error.message)
+        return
+      }
+
+      if (data) {
+        setSentRequests([...sentRequests, data])
+        setSearchResults((prev) => prev.filter((u) => u.id !== receiverId))
+      }
+    } catch (err) {
+      console.error('Error in sendFriendRequest:', err)
+      alert('Error sending friend request')
+    }
   }
 
   const acceptFriendRequest = async (requestId: string, senderId: string) => {
     if (!user) return
 
-    // Find the request
-    const request = friendRequests.find((r) => r.id === requestId)
-    if (!request) return
+    try {
+      // Update request status to accepted
+      const { error: updateError } = await supabase
+        .from('friend_requests')
+        .update({ status: 'accepted' })
+        .eq('id', requestId)
 
-    // Add to friends list
-    const newFriend = {
-      id: request.sender.id,
-      name: request.sender.name,
-      email: request.sender.email,
-      college: request.sender.college,
-      avatar_url: request.sender.avatar_url,
-      friendship_id: `f_${Date.now()}`,
-    }
-
-    setFriends([...friends, newFriend])
-    setFriendRequests((prev) => prev.filter((r) => r.id !== requestId))
-
-    // Initialize empty messages for new friend if not exists
-    setDummyMessagesState((prev) => {
-      if (!prev[newFriend.id]) {
-        return { ...prev, [newFriend.id]: [] }
+      if (updateError) {
+        console.error('Error updating friend request:', updateError)
+        return
       }
-      return prev
-    })
+
+      // Create friendship (ensure user1_id < user2_id for consistency)
+      const user1Id = user.id < senderId ? user.id : senderId
+      const user2Id = user.id < senderId ? senderId : user.id
+
+      const { data: friendshipData, error: friendshipError } = await supabase
+        .from('friendships')
+        .insert({
+          user1_id: user1Id,
+          user2_id: user2Id,
+          status: 'accepted',
+        })
+        .select(`
+          *,
+          user1:users!friendships_user1_id_fkey(id, name, email, college, avatar_url),
+          user2:users!friendships_user2_id_fkey(id, name, email, college, avatar_url)
+        `)
+        .single()
+
+      if (friendshipError) {
+        console.error('Error creating friendship:', friendshipError)
+        return
+      }
+
+      // Refresh friends list and requests
+      fetchFriends()
+      fetchFriendRequests()
+    } catch (err) {
+      console.error('Error in acceptFriendRequest:', err)
+    }
   }
 
   const rejectFriendRequest = async (requestId: string) => {
-    setFriendRequests((prev) => prev.filter((r) => r.id !== requestId))
+    try {
+      const { error } = await supabase
+        .from('friend_requests')
+        .update({ status: 'rejected' })
+        .eq('id', requestId)
+
+      if (error) {
+        console.error('Error rejecting friend request:', error)
+        return
+      }
+
+      fetchFriendRequests()
+    } catch (err) {
+      console.error('Error in rejectFriendRequest:', err)
+    }
   }
 
+
+  const fetchMessages = async (friendId: string) => {
+    if (!user) return
+
+    try {
+      const chatId = getChatId(user.id, friendId)
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:users!messages_sender_id_fkey(id, name, avatar_url)
+        `)
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching messages:', error)
+        return
+      }
+
+      if (data) {
+        setMessages(data)
+      }
+    } catch (err) {
+      console.error('Error in fetchMessages:', err)
+    }
+  }
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedFriend || !user) return
 
-    // Add message to dummy data (simulating sending)
-    const newMsg = {
-      id: `msg_${Date.now()}`,
-      chat_id: getChatId(user.id, selectedFriend.id),
-      sender_id: user.id,
-      receiver_id: selectedFriend.id,
-      content: newMessage.trim(),
-      created_at: new Date().toISOString(),
-      sender: { id: user.id, name: 'You', avatar_url: null },
+    try {
+      const chatId = getChatId(user.id, selectedFriend.id)
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: user.id,
+          receiver_id: selectedFriend.id,
+          content: newMessage.trim(),
+        })
+        .select(`
+          *,
+          sender:users!messages_sender_id_fkey(id, name, avatar_url)
+        `)
+        .single()
+
+      if (error) {
+        console.error('Error sending message:', error)
+        alert('Error sending message: ' + error.message)
+        return
+      }
+
+      if (data) {
+        setMessages((prev) => [...prev, data])
+        setNewMessage('')
+
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          const messagesContainer = document.getElementById('messages-container')
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight
+          }
+        }, 100)
+      }
+    } catch (err) {
+      console.error('Error in sendMessage:', err)
+      alert('Error sending message')
     }
-
-    // Update dummy messages state for this friend
-    setDummyMessagesState((prev) => {
-      const friendMessages = prev[selectedFriend.id] || []
-      return {
-        ...prev,
-        [selectedFriend.id]: [...friendMessages, newMsg],
-      }
-    })
-
-    // Update messages state
-    setMessages((prev) => [...prev, newMsg])
-    setNewMessage('')
-
-    // Auto-scroll to bottom
-    setTimeout(() => {
-      const messagesContainer = document.getElementById('messages-container')
-      if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight
-      }
-    }, 100)
   }
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import EventCard from '../components/EventCard'
 
 export default function Events() {
   const { user } = useAuth()
@@ -18,7 +19,10 @@ export default function Events() {
     location: '',
     organizer: '',
     registration_link: '',
+    image_url: '',
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     fetchEvents()
@@ -46,11 +50,50 @@ export default function Events() {
     setLoading(false)
   }
 
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `event-images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('event-images')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError)
+        return null
+      }
+
+      const { data } = supabase.storage.from('event-images').getPublicUrl(filePath)
+      return data.publicUrl
+    } catch (error) {
+      console.error('Error in handleImageUpload:', error)
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
 
     try {
+      setUploading(true)
+
+      // Upload image if provided
+      let imageUrl = formData.image_url
+      if (imageFile) {
+        const uploadedUrl = await handleImageUpload(imageFile)
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl
+        } else {
+          imageUrl = formData.image_url || null
+        }
+      }
+
       const { error } = await supabase.from('events').insert({
         title: formData.title,
         description: formData.description,
@@ -62,6 +105,7 @@ export default function Events() {
         organizer: formData.organizer,
         organizer_id: user.id,
         registration_link: formData.registration_link,
+        image_url: imageUrl,
         created_by: user.id,
       })
 
@@ -77,12 +121,16 @@ export default function Events() {
         location: '',
         organizer: '',
         registration_link: '',
+        image_url: '',
       })
+      setImageFile(null)
       fetchEvents()
       alert('Event created successfully!')
     } catch (error: any) {
       console.error('Error creating event:', error)
       alert('Error creating event: ' + error.message)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -163,42 +211,7 @@ export default function Events() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-black">{event.title}</h3>
-                  <span className="px-2 py-1 bg-navy text-white text-xs rounded">
-                    {event.event_type}
-                  </span>
-                </div>
-                <p className="text-silver-dark text-sm mb-4 line-clamp-3">
-                  {event.description}
-                </p>
-                <div className="space-y-2 text-sm text-silver-dark">
-                  <div className="flex items-center gap-2">
-                    <span>📅</span>
-                    <span>{new Date(event.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>📍</span>
-                    <span>{event.location}</span>
-                  </div>
-                  {event.domains && event.domains.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {event.domains.slice(0, 3).map((domain: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 bg-silver-light text-black text-xs rounded"
-                        >
-                          {domain}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <EventCard key={event.id} event={event} onUpdate={fetchEvents} />
             ))}
           </div>
         )}
@@ -332,6 +345,51 @@ export default function Events() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Event Image (optional)
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setImageFile(file)
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setFormData({ ...formData, image_url: reader.result as string })
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-silver rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
+                  />
+                  {imageFile && (
+                    <div className="mt-2">
+                      <img
+                        src={URL.createObjectURL(imageFile)}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  {formData.image_url && !imageFile && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.image_url}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
@@ -342,9 +400,10 @@ export default function Events() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-navy text-white rounded-lg font-medium hover:bg-navy-light transition-colors"
+                  disabled={uploading}
+                  className="flex-1 px-4 py-3 bg-navy text-white rounded-lg font-medium hover:bg-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Event
+                  {uploading ? 'Creating...' : 'Add Event'}
                 </button>
               </div>
             </form>

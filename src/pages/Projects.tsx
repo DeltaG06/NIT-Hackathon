@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import ProjectCard from '../components/ProjectCard'
 
 export default function Projects() {
   const { user } = useAuth()
@@ -14,32 +15,72 @@ export default function Projects() {
     required_skills: '',
     looking_for: '',
     repo_link: '',
+    image_url: '',
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     fetchProjects()
   }, [])
 
   const fetchProjects = async () => {
-    const { data } = await supabase
-      .from('projects')
-      .select(`
-        *,
-        project_members (
-          user_id,
-          role,
-          users (
-            name,
-            avatar_url
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          project_members (
+            user_id,
+            role,
+            users (
+              name,
+              avatar_url
+            )
           )
-        )
-      `)
-      .order('created_at', { ascending: false })
+        `)
+        .order('created_at', { ascending: false })
 
-    if (data) {
-      setProjects(data)
+      if (error) {
+        console.error('Error fetching projects:', error)
+        return
+      }
+
+      if (data) {
+        setProjects(data)
+      }
+    } catch (err) {
+      console.error('Error in fetchProjects:', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
+  }
+
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `project-images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError)
+        // If storage bucket doesn't exist, use image URL directly
+        return null
+      }
+
+      const { data } = supabase.storage.from('project-images').getPublicUrl(filePath)
+      return data.publicUrl
+    } catch (error) {
+      console.error('Error in handleImageUpload:', error)
+      return null
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -47,6 +88,20 @@ export default function Projects() {
     if (!user) return
 
     try {
+      setUploading(true)
+
+      // Upload image if provided
+      let imageUrl = formData.image_url
+      if (imageFile) {
+        const uploadedUrl = await handleImageUpload(imageFile)
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl
+        } else {
+          // Fallback: use the URL from form if upload fails
+          imageUrl = formData.image_url || null
+        }
+      }
+
       // Get user profile for owner_name
       const { data: userProfile } = await supabase
         .from('users')
@@ -64,6 +119,7 @@ export default function Projects() {
           domain_tags: formData.tags.split(',').map((t) => t.trim()).filter(t => t),
           required_skills: formData.required_skills.split(',').map((s) => s.trim()).filter(s => s),
           looking_for: formData.looking_for,
+          image_url: imageUrl,
           created_by: user.id,
           owner_id: user.id,
           owner_name: userProfile?.name || 'Unknown',
@@ -98,12 +154,17 @@ export default function Projects() {
         required_skills: '',
         looking_for: '',
         repo_link: '',
+        image_url: '',
       })
+      setImageFile(null)
+      setUploading(false)
       fetchProjects()
       alert('Project created successfully!')
     } catch (error: any) {
       console.error('Error creating project:', error)
       alert('Error creating project: ' + error.message)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -136,34 +197,7 @@ export default function Projects() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <div
-                key={project.id}
-                className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow"
-              >
-                <h3 className="text-xl font-bold text-black mb-2">{project.title}</h3>
-                <p className="text-silver-dark text-sm mb-4 line-clamp-3">
-                  {project.description}
-                </p>
-                {project.tags && project.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {project.tags.slice(0, 3).map((tag: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 bg-silver-light text-black text-xs rounded"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-sm text-silver-dark">
-                  <span>👥</span>
-                  <span>
-                    {project.project_members?.length || 0} member
-                    {(project.project_members?.length || 0) !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
+              <ProjectCard key={project.id} project={project} onUpdate={fetchProjects} />
             ))}
           </div>
         )}
@@ -271,6 +305,37 @@ export default function Projects() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Project Image (optional)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setImageFile(file)
+                      const reader = new FileReader()
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, image_url: reader.result as string })
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-silver rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
+                />
+                {imageFile && (
+                  <div className="mt-2">
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <button
                   type="button"
@@ -281,9 +346,10 @@ export default function Projects() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-navy text-white rounded-lg font-medium hover:bg-navy-light transition-colors"
+                  disabled={uploading}
+                  className="flex-1 px-4 py-3 bg-navy text-white rounded-lg font-medium hover:bg-navy-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Project
+                  {uploading ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
             </form>

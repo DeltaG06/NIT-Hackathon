@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
+import ProjectDetailPage from './pages/ProjectDetailPage'
 import Events from './pages/Events'
 import ProComm from './pages/ProComm'
 import Profile from './pages/Profile'
@@ -55,6 +56,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Projects />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProjectDetailPage />
             </AppLayout>
           </ProtectedRoute>
         }
